@@ -80,7 +80,7 @@ def write_chapters_file(chapter_file:str, chapter_list:tuple)->None:
                             f'{current_chapter[2]}\n')
 
 
-def split_mpa(chapters:list, download_filename:str, download_name:str)->None:
+def split_m4a(chapters:list, download_filename:str, download_name:str)->None:
     current_duration_pretext = subprocess.run(['ffprobe', '-i', download_filename,
                                        '-show_entries', 'format=duration',
                                        '-v', 'quiet'],
