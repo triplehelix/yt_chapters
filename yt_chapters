@@ -1,8 +1,5 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-# TODO: change working location to be a temp dir
-# TODO: Add option for mkv
 
 import subprocess, os, argparse, datetime, re, sys
 
@@ -14,12 +11,12 @@ def get_source_name(download_source:str)->str:
                             capture_output=True, encoding='UTF8')
     return result.stdout.rstrip('\n')
 
-def get_best_mp4_single_file(download_source:str, description_file:str,
+def get_best_mpa_single_file(download_source:str, description_file:str,
                              fix_required:bool=False)->list:
 
     # Download the file as mp4 (in order to use MP4)
     subprocess.run(["youtube-dl", "--write-description", "-f",
-                    "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4",
+                    "bestaudio[ext=m4a]",
                     "-o", "%(title)s.%(ext)s", link_to_download])
     if fix_required:
         input("Fix the description file to have the chapters "
@@ -27,12 +24,12 @@ def get_best_mp4_single_file(download_source:str, description_file:str,
               "and then press Enter to continue...")
     return read_description_file(description_file=description_file)
 
-def get_worst_mp4_single_file(download_source:str, description_file:str,
+def get_worst_mpa_single_file(download_source:str, description_file:str,
                               fix_required:bool=False)->list:
 
-    # Download the file as mp4 (in order to use MP4)
+    # Download the file as mpa
     subprocess.run(["youtube-dl", "--write-description", "-f",
-                    "worstvideo[ext=mp4]+worstaudio[ext=m4a]/mp4",
+                    "worstaudio[ext=m4a]",
                     "-o", "%(title)s.%(ext)s", link_to_download])
     if fix_required:
         input("Fix the description file to have the chapters "
@@ -59,11 +56,9 @@ def read_description_file(description_file:str)->list:
         for line in f:
             result = re.search(r"\(?(\d?[:]?\d+[:]\d+)\)?", line)
             try:
-                # result = re.search("\(?(\d+[:]\d+[:]\d+)\)?", line)
                 time_count = datetime.datetime.strptime(result.group(1), '%H:%M:%S')
             except:
                 try:
-                    # result = re.search("\(?(\d+[:]\d+)\)?", line)
                     time_count = datetime.datetime.strptime(result.group(1), '%M:%S')
                 except:
                     continue
@@ -76,8 +71,6 @@ def read_description_file(description_file:str)->list:
 
 def write_chapters_file(chapter_file:str, chapter_list:tuple)->None:
 
-            #open(chapter_file, 'w').close()
-
             # Write out the chapter file based on simple MP4 format (OGM)
             with open(chapter_file, 'w') as fo:
                 for current_chapter in chapter_list:
@@ -87,12 +80,7 @@ def write_chapters_file(chapter_file:str, chapter_list:tuple)->None:
                             f'{current_chapter[2]}\n')
 
 
-def split_mp4(chapters:list, download_filename:str, download_name:str)->None:
-
-    # current_duration = subprocess.run(['ffprobe', '-i', download_filename,
-                                       # '-show_entries', 'format=duration',
-                                       # '-v', 'quiet', '-of', 'csv="p=0"'],
-                                        # capture_output=True, encoding='UTF8')
+def split_mpa(chapters:list, download_filename:str, download_name:str)->None:
     current_duration_pretext = subprocess.run(['ffprobe', '-i', download_filename,
                                        '-show_entries', 'format=duration',
                                        '-v', 'quiet'],
@@ -109,14 +97,13 @@ def split_mp4(chapters:list, download_filename:str, download_name:str)->None:
             end_time = chapters[next_index][1]
         except:
             end_time = current_dur
-        output_name = f'{download_name} - ({current_chapter[2]}).mp4'
+        output_name = f'{download_name} - ({current_chapter[2]}).mpa'
         subprocess.run(["ffmpeg", "-ss", start_time, "-to", end_time,
-                        "-i", download_filename, "-acodec", "copy",
-                        "-vcodec", "copy", output_name])
+                        "-i", download_filename, "-acodec", "copy", output_name])
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Download Youtube videos with chapters')
+    parser = argparse.ArgumentParser(description='Extract Audio from Youtube videos with chapters')
 
     parser.add_argument('links', metavar='N', type=str, nargs='+',
                         help='List of links to download')
@@ -128,21 +115,20 @@ if __name__ == '__main__':
     parser.add_argument("--fix", help="Pause to allow manual correction of the description file",
                         action="store_true")
     args = parser.parse_args()
-    # print(args.links)
 
     for link_to_download in args.links:
 
         download_name = get_source_name(download_source=link_to_download)
-        download_filename = f'{download_name}.mp4'
+        download_filename = f'{download_name}.mpa'
         description_file = f'{download_name}.description'
         chapter_file = f'{download_name}_chapter.txt'
 
         if not args.test:
-            chapters = get_best_mp4_single_file(download_source=link_to_download,
+            chapters = get_best_mpa_single_file(download_source=link_to_download,
                                                 description_file=description_file,
                                                 fix_required=args.fix)
         else:
-            chapters = get_worst_mp4_single_file(download_source=link_to_download,
+            chapters = get_worst_mpa_single_file(download_source=link_to_download,
                                                 description_file=description_file,
                                                 fix_required=args.fix)
 
@@ -154,10 +140,10 @@ if __name__ == '__main__':
         write_chapters_file(chapter_file=chapter_file, chapter_list=chapters)
 
         if args.split:
-            split_mp4(chapters=chapters, download_filename=download_filename,
+            split_mpa(chapters=chapters, download_filename=download_filename,
                       download_name=download_name)
         
-        add_chapters_to_mp4(chapter_file_name=chapter_file,
+        add_chapters_to_mpa(chapter_file_name=chapter_file,
                               name_for_download=download_filename)
 
         # Clean up the text files
