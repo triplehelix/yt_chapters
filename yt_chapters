@@ -14,8 +14,8 @@ def get_source_name(download_source:str)->str:
 def get_best_mp3_single_file(download_source:str, description_file:str,
                              fix_required:bool=False)->list:
     # Download the file as mp3
-    subprocess.run(["youtube-dl", "--write-description", "-f",
-                    "bestaudio[ext=mp3]",
+    subprocess.run(["youtube-dl", "--write-description", "-x",
+                    "--audio-format", "mp3",
                     "-o", "%(title)s.%(ext)s", link_to_download])
     if fix_required:
         input("Fix the description file to have the chapters "
@@ -26,8 +26,8 @@ def get_best_mp3_single_file(download_source:str, description_file:str,
 def get_worst_mp3_single_file(download_source:str, description_file:str,
                               fix_required:bool=False)->list:
     # Download the file as mp3
-    subprocess.run(["youtube-dl", "--write-description", "-f",
-                    "worstaudio[ext=mp3]",
+    subprocess.run(["youtube-dl", "--write-description", "-x",
+                    "--audio-format", "mp3",
                     "-o", "%(title)s.%(ext)s", link_to_download])
     if fix_required:
         input("Fix the description file to have the chapters "
