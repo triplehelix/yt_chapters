@@ -11,7 +11,7 @@ def get_source_name(download_source:str)->str:
                             capture_output=True, encoding='UTF8')
     return result.stdout.rstrip('\n')
 
-def get_best_mpa_single_file(download_source:str, description_file:str,
+def get_best_m4a_single_file(download_source:str, description_file:str,
                              fix_required:bool=False)->list:
 
     # Download the file as mp4 (in order to use MP4)
@@ -24,10 +24,10 @@ def get_best_mpa_single_file(download_source:str, description_file:str,
               "and then press Enter to continue...")
     return read_description_file(description_file=description_file)
 
-def get_worst_mpa_single_file(download_source:str, description_file:str,
+def get_worst_m4a_single_file(download_source:str, description_file:str,
                               fix_required:bool=False)->list:
 
-    # Download the file as mpa
+    # Download the file as m4a
     subprocess.run(["youtube-dl", "--write-description", "-f",
                     "worstaudio[ext=m4a]",
                     "-o", "%(title)s.%(ext)s", link_to_download])
@@ -97,7 +97,7 @@ def split_mpa(chapters:list, download_filename:str, download_name:str)->None:
             end_time = chapters[next_index][1]
         except:
             end_time = current_dur
-        output_name = f'{download_name} - ({current_chapter[2]}).mpa'
+        output_name = f'{download_name} - ({current_chapter[2]}).m4a'
         subprocess.run(["ffmpeg", "-ss", start_time, "-to", end_time,
                         "-i", download_filename, "-acodec", "copy", output_name])
 
@@ -119,16 +119,16 @@ if __name__ == '__main__':
     for link_to_download in args.links:
 
         download_name = get_source_name(download_source=link_to_download)
-        download_filename = f'{download_name}.mpa'
+        download_filename = f'{download_name}.m4a'
         description_file = f'{download_name}.description'
         chapter_file = f'{download_name}_chapter.txt'
 
         if not args.test:
-            chapters = get_best_mpa_single_file(download_source=link_to_download,
+            chapters = get_best_m4a_single_file(download_source=link_to_download,
                                                 description_file=description_file,
                                                 fix_required=args.fix)
         else:
-            chapters = get_worst_mpa_single_file(download_source=link_to_download,
+            chapters = get_worst_m4a_single_file(download_source=link_to_download,
                                                 description_file=description_file,
                                                 fix_required=args.fix)
 
@@ -140,10 +140,10 @@ if __name__ == '__main__':
         write_chapters_file(chapter_file=chapter_file, chapter_list=chapters)
 
         if args.split:
-            split_mpa(chapters=chapters, download_filename=download_filename,
+            split_m4a(chapters=chapters, download_filename=download_filename,
                       download_name=download_name)
         
-        add_chapters_to_mpa(chapter_file_name=chapter_file,
+        add_chapters_to_m4a(chapter_file_name=chapter_file,
                               name_for_download=download_filename)
 
         # Clean up the text files
