@@ -3,20 +3,19 @@
 
 import subprocess, os, argparse, datetime, re, sys
 
-def get_source_name(download_source:str)->str:
 
+def get_source_name(download_source:str)->str:
     # Get the expected filename in order to process everything down the line
     result = subprocess.run(["youtube-dl", "--get-filename",
                             "-o", "%(title)s", download_source],
                             capture_output=True, encoding='UTF8')
     return result.stdout.rstrip('\n')
 
-def get_best_m4a_single_file(download_source:str, description_file:str,
+def get_best_mp3_single_file(download_source:str, description_file:str,
                              fix_required:bool=False)->list:
-
-    # Download the file as m4a
+    # Download the file as mp3
     subprocess.run(["youtube-dl", "--write-description", "-f",
-                    "bestaudio[ext=m4a]",
+                    "bestaudio[ext=mp3]",
                     "-o", "%(title)s.%(ext)s", link_to_download])
     if fix_required:
         input("Fix the description file to have the chapters "
@@ -24,26 +23,19 @@ def get_best_m4a_single_file(download_source:str, description_file:str,
               "and then press Enter to continue...")
     return read_description_file(description_file=description_file)
 
-def get_worst_m4a_single_file(download_source:str, description_file:str,
+def get_worst_mp3_single_file(download_source:str, description_file:str,
                               fix_required:bool=False)->list:
-
-    # Download the file as m4a
+    # Download the file as mp3
     subprocess.run(["youtube-dl", "--write-description", "-f",
-                    "worstaudio[ext=m4a]",
+                    "worstaudio[ext=mp3]",
                     "-o", "%(title)s.%(ext)s", link_to_download])
     if fix_required:
         input("Fix the description file to have the chapters "
               "on their own lines in the format timecode name "
               "and then press Enter to continue...")
     return read_description_file(description_file=description_file)
-
-def add_chapters_to_m4a(chapter_file_name:str, name_for_download:str)->None:
-
-    # Use MP4Box to mux the chapter file with the m4a
-    subprocess.run(["MP4Box", "-chap", chapter_file_name, name_for_download])
 
 def read_description_file(description_file:str)->list:
-
     # Read the description file
     # Split into time and chapter name
 
@@ -70,7 +62,6 @@ def read_description_file(description_file:str)->list:
     return list_of_chapters
 
 def write_chapters_file(chapter_file:str, chapter_list:tuple)->None:
-
             # Write out the chapter file based on simple MP4 format (OGM)
             with open(chapter_file, 'w') as fo:
                 for current_chapter in chapter_list:
@@ -80,7 +71,7 @@ def write_chapters_file(chapter_file:str, chapter_list:tuple)->None:
                             f'{current_chapter[2]}\n')
 
 
-def split_m4a(chapters:list, download_filename:str, download_name:str)->None:
+def split_mp3(chapters:list, download_filename:str, download_name:str)->None:
     current_duration_pretext = subprocess.run(['ffprobe', '-i', download_filename,
                                        '-show_entries', 'format=duration',
                                        '-v', 'quiet'],
@@ -97,17 +88,15 @@ def split_m4a(chapters:list, download_filename:str, download_name:str)->None:
             end_time = chapters[next_index][1]
         except:
             end_time = current_dur
-        output_name = f'{download_name} - ({current_chapter[2]}).m4a'
+        output_name = f'{download_name} - ({current_chapter[2]}).mp3'
         subprocess.run(["ffmpeg", "-ss", start_time, "-to", end_time,
                         "-i", download_filename, "-acodec", "copy", output_name])
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(description='Extract Audio from Youtube videos with chapters')
 
     parser.add_argument('links', metavar='N', type=str, nargs='+',
                         help='List of links to download')
-
     parser.add_argument("--split", help="Split chapters into individual files",
                         action="store_true")
     parser.add_argument("--test", help="Download worst version to speed up testing",
@@ -117,22 +106,20 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     for link_to_download in args.links:
-
         download_name = get_source_name(download_source=link_to_download)
-        download_filename = f'{download_name}.m4a'
+        download_filename = f'{download_name}.mp3'
         description_file = f'{download_name}.description'
         chapter_file = f'{download_name}_chapter.txt'
 
         if not args.test:
-            chapters = get_best_m4a_single_file(download_source=link_to_download,
+            chapters = get_best_mp3_single_file(download_source=link_to_download,
                                                 description_file=description_file,
                                                 fix_required=args.fix)
         else:
-            chapters = get_worst_m4a_single_file(download_source=link_to_download,
+            chapters = get_worst_mp3_single_file(download_source=link_to_download,
                                                 description_file=description_file,
                                                 fix_required=args.fix)
 
-        
         if not chapter_file:
             print("No chapters found")
             sys.exit(1)
@@ -140,11 +127,8 @@ if __name__ == '__main__':
         write_chapters_file(chapter_file=chapter_file, chapter_list=chapters)
 
         if args.split:
-            split_m4a(chapters=chapters, download_filename=download_filename,
+            split_mp3(chapters=chapters, download_filename=download_filename,
                       download_name=download_name)
-        
-        add_chapters_to_m4a(chapter_file_name=chapter_file,
-                              name_for_download=download_filename)
 
         # Clean up the text files
         os.remove(description_file)
