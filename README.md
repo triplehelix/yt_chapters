@@ -1,4 +1,4 @@
-# YouTube downloader with chapters
+# YouTube downloader with chapters extract audio
 
 ## Requirements:
 
